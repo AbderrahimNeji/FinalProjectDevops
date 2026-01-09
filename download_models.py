@@ -6,10 +6,11 @@ This script downloads pre-trained YOLOv8 models to the models/ directory.
 
 import os
 import sys
+import shutil
 from pathlib import Path
 
 def download_models():
-    """Download YOLOv8 models"""
+    """Download YOLOv8 models to models/ directory"""
     try:
         from ultralytics import YOLO
         
@@ -23,7 +24,7 @@ def download_models():
             'yolov8l.pt',  # Large - more accurate
         ]
         
-        print("🚀 Downloading YOLOv8 models...")
+        print("🚀 Downloading YOLOv8 models to models/ directory...")
         print()
         
         for model_name in model_names:
@@ -37,8 +38,15 @@ def download_models():
             
             print(f"⏳ Downloading {model_name}...")
             try:
-                model = YOLO(model_name)  # Auto-downloads to ~/.yolov8/weights/
-                print(f"✅ Downloaded {model_name}")
+                # Download model (saves to cache)
+                model = YOLO(model_name)
+                
+                # Copy to models/ directory
+                cache_path = Path(model.ckpt_path)
+                shutil.copy2(cache_path, model_path)
+                
+                size_mb = model_path.stat().st_size / (1024 * 1024)
+                print(f"✅ Downloaded and copied {model_name} to models/ ({size_mb:.1f} MB)")
             except Exception as e:
                 print(f"❌ Failed to download {model_name}: {e}")
         
