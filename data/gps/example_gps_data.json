@@ -1,0 +1,58 @@
+[
+  {
+    "frame_id": "frame_001.jpg",
+    "timestamp": "2026-01-09T10:15:30Z",
+    "gps": {
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "altitude": 35.0,
+      "accuracy": 5.2
+    },
+    "detections": [
+      {
+        "class": "pothole",
+        "confidence": 0.89,
+        "bbox": [0.512, 0.487, 0.234, 0.189]
+      }
+    ]
+  },
+  {
+    "frame_id": "frame_002.jpg",
+    "timestamp": "2026-01-09T10:15:31Z",
+    "gps": {
+      "latitude": 48.8567,
+      "longitude": 2.3523,
+      "altitude": 35.2,
+      "accuracy": 4.8
+    },
+    "detections": [
+      {
+        "class": "longitudinal_crack",
+        "confidence": 0.76,
+        "bbox": [0.245, 0.623, 0.156, 0.423]
+      },
+      {
+        "class": "faded_road_marking",
+        "confidence": 0.82,
+        "bbox": [0.534, 0.823, 0.267, 0.089]
+      }
+    ]
+  },
+  {
+    "frame_id": "frame_003.jpg",
+    "timestamp": "2026-01-09T10:15:32Z",
+    "gps": {
+      "latitude": 48.8568,
+      "longitude": 2.3524,
+      "altitude": 35.5,
+      "accuracy": 5.0
+    },
+    "detections": [
+      {
+        "class": "crazing",
+        "confidence": 0.71,
+        "bbox": [0.789, 0.234, 0.178, 0.145]
+      }
+    ]
+  }
+]

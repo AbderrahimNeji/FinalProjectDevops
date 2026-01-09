@@ -1,0 +1,68 @@
+{
+  "dataset_info": {
+    "name": "Road Degradation Detection Dataset",
+    "version": "1.0.0",
+    "description": "Dataset for detecting road and infrastructure anomalies including potholes, cracks, crazing, and faded road markings",
+    "created_date": "2026-01-09",
+    "classes": [
+      {
+        "id": 0,
+        "name": "pothole",
+        "description": "Holes or depressions in road surface"
+      },
+      {
+        "id": 1,
+        "name": "longitudinal_crack",
+        "description": "Cracks running parallel to road direction"
+      },
+      {
+        "id": 2,
+        "name": "crazing",
+        "description": "Network of fine cracks in pavement surface"
+      },
+      {
+        "id": 3,
+        "name": "faded_road_marking",
+        "description": "Worn or faded lane markings and road paint"
+      }
+    ]
+  },
+  "collection_info": {
+    "location": "Various urban and rural roads",
+    "weather_conditions": [
+      "sunny",
+      "cloudy",
+      "overcast"
+    ],
+    "time_of_day": [
+      "morning",
+      "afternoon",
+      "evening"
+    ],
+    "camera_specs": {
+      "resolution": "1920x1080",
+      "fps": 30,
+      "format": "MP4"
+    }
+  },
+  "statistics": {
+    "total_images": 9,
+    "total_videos": 0,
+    "total_frames": 9,
+    "total_annotations": 9,
+    "class_distribution": {
+      "pothole": 4,
+      "longitudinal_crack": 3,
+      "crazing": 3,
+      "faded_road_marking": 3
+    }
+  },
+  "data_split": {
+    "train": 0.7,
+    "validation": 0.2,
+    "test": 0.1
+  },
+  "annotation_format": "YOLO",
+  "annotation_tool": "LabelImg / Roboflow",
+  "gps_enabled": true
+}

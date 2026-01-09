@@ -1,0 +1,62 @@
+# Dataset Configuration
+
+dataset_name: "road_degradation_detection"
+version: "1.0.0"
+created: "2026-01-09"
+
+# Classes
+classes:
+  0: "pothole"
+  1: "longitudinal_crack"
+  2: "crazing"
+  3: "faded_road_marking"
+
+# Paths
+train: "data/annotations/train"
+val: "data/annotations/val"
+test: "data/annotations/test"
+
+# Number of classes
+nc: 4
+
+# Class names
+names:
+  - pothole
+  - longitudinal_crack
+  - crazing
+  - faded_road_marking
+
+# Dataset statistics (update after annotation)
+stats:
+  total_images: 0
+  train_images: 0
+  val_images: 0
+  test_images: 0
+
+  total_annotations: 0
+  potholes: 0
+  cracks: 0
+  crazing: 0
+  faded_markings: 0
+
+# Data augmentation settings
+augmentation:
+  enabled: true
+  flip: true
+  rotate: 15
+  scale: 0.5
+  brightness: 0.2
+  contrast: 0.2
+  saturation: 0.2
+
+# Image settings
+image:
+  width: 640
+  height: 640
+  format: "jpg"
+
+# Video settings
+video:
+  fps: 30
+  extract_every_n_frames: 10
+  format: "mp4"
