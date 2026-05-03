@@ -339,5 +339,6 @@ This project is for educational/research purposes (Project 4: Degradation Detect
 
 ## Authors
 
-DevOps Project Team  
-January 2026
+Aymen Jeddou
+Abderrahim Neji
+Mohamed Amine Trabelsi
