@@ -339,6 +339,6 @@ This project is for educational/research purposes (Project 4: Degradation Detect
 
 ## Authors
 
-Aymen Jeddou
-Abderrahim Neji
-Mohamed Amine Trabelsi
+1-Aymen Jeddou
+2-Abderrahim Neji
+3-Mohamed Amine Trabelsi
