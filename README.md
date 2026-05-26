@@ -2,8 +2,9 @@
 
 ## Overview
 
+--
 This project implements an automated road degradation detection system using YOLOv8 for object detection. It detects and classifies four types of road anomalies, associates detections with GPS coordinates, and provides an interactive map dashboard for visualization.
-
+--
 ## Features
 
 ✅ **4-Class Object Detection**: Potholes, Longitudinal Cracks, Crazing, Faded Markings  
@@ -157,6 +158,8 @@ road-degradation-detection/
 **Total Annotations**: ~8500+ bounding boxes
 
 **Quality**: Professional road inspection dataset from Czech Republic, covering diverse road conditions, weather scenarios, and damage severities. Higher quality and consistency compared to previous mixed sources.
+
+
 
 ---
 
