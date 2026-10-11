@@ -10,6 +10,8 @@ from pathlib import Path
 from tqdm import tqdm
 import random
 
+from src.evaluation.validation import LabelValidationError, xyxy_to_yolo_bbox
+
 # Mapping RDD2022 classes
 CLASS_MAPPING = {
     'D00': 0,  # Longitudinal Crack
@@ -19,15 +21,9 @@ CLASS_MAPPING = {
 }
 
 def convert_bbox_to_yolo(bbox, img_width, img_height):
-    """Convertir bbox PascalVOC (xmin, ymin, xmax, ymax) en format YOLO (x_center, y_center, width, height) normalisé"""
+    """Convertir bbox PascalVOC (xmin, ymin, xmax, ymax) en YOLO xywh normalisé."""
     xmin, ymin, xmax, ymax = bbox
-    
-    x_center = (xmin + xmax) / 2.0 / img_width
-    y_center = (ymin + ymax) / 2.0 / img_height
-    width = (xmax - xmin) / img_width
-    height = (ymax - ymin) / img_height
-    
-    return x_center, y_center, width, height
+    return xyxy_to_yolo_bbox(xmin, ymin, xmax, ymax, img_width, img_height)
 
 def parse_xml_annotation(xml_path):
     """Parser annotation XML PascalVOC"""
@@ -54,8 +50,12 @@ def parse_xml_annotation(xml_path):
         xmax = float(bbox.find('xmax').text)
         ymax = float(bbox.find('ymax').text)
         
-        # Convertir en format YOLO
-        yolo_bbox = convert_bbox_to_yolo((xmin, ymin, xmax, ymax), img_width, img_height)
+        try:
+            yolo_bbox = convert_bbox_to_yolo(
+                (xmin, ymin, xmax, ymax), img_width, img_height
+            )
+        except LabelValidationError:
+            continue
         annotations.append((class_id, *yolo_bbox))
     
     return annotations

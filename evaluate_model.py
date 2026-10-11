@@ -1,129 +1,148 @@
 """
-ÉVALUATION DU MODÈLE - Métriques Project 4
-Calcule: mAP @ IoU, Erreur géolocalisation, Throughput (FPS)
-Usage: python evaluate_model.py
+Evaluate a trained detector without inventing scores.
+
+Requires a weights file produced by training. Unit tests for metrics and
+label checks live in src/evaluation/validation.py and do not need a GPU.
+Usage: python evaluate_model.py [--model PATH] [--data PATH] [video.mp4]
 """
 
-from ultralytics import YOLO
+from __future__ import annotations
+
+import argparse
+import json
 import os
 import sys
-import json
 import time
-import cv2
 from pathlib import Path
 
-print("=" * 70)
-print("  ÉVALUATION COMPLÈTE - PROJECT 4")
-print("=" * 70)
+from src.evaluation.validation import (
+    compile_box_metrics,
+    resolve_model_path,
+    validate_detection_coordinates,
+)
 
-# Configuration
-model_path = "runs/detect/simple_model/weights/best.pt"
-data_yaml = "data/yolo_dataset/dataset.yaml"
 
-# 1️⃣ MÉTRIQUES DE DÉTECTION (mAP @ IoU)
-print("\n1️⃣ mAP @ IoU Thresholds")
-print("-" * 70)
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Evaluate a trained YOLO model")
+    parser.add_argument(
+        "video",
+        nargs="?",
+        default=None,
+        help="Optional video for throughput measurement",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Path to trained weights (defaults to known training output paths)",
+    )
+    parser.add_argument(
+        "--data",
+        default="data/yolo_dataset/dataset.yaml",
+        help="YOLO dataset YAML",
+    )
+    parser.add_argument(
+        "--geojson",
+        default="resultats/geojson/test_detections.geojson",
+        help="Optional GeoJSON of detections to validate coordinates",
+    )
+    parser.add_argument(
+        "--output",
+        default="resultats/evaluation/metrics.json",
+        help="Where to write measured metrics JSON",
+    )
+    return parser.parse_args(argv)
 
-if not os.path.exists(model_path):
-    print(f"\n❌ Modèle non trouvé: {model_path}")
-    print("   Entraînez d'abord: python simple_train.py")
-    sys.exit(1)
 
-print(f"\n📦 Modèle: {model_path}")
-print(f"📊 Dataset: {data_yaml}\n")
+def evaluate(args):
+    print("=" * 70)
+    print("  EVALUATION - PROJECT 4")
+    print("=" * 70)
 
-model = YOLO(model_path)
-metrics = model.val(data=data_yaml, plots=True)
+    try:
+        model_path = resolve_model_path(args.model)
+    except FileNotFoundError as exc:
+        print(f"\n{exc}")
+        return 1
 
-print(f"\n📈 Résultats:")
-print(f"   mAP@0.5      : {metrics.box.map50:.4f}")
-print(f"   mAP@0.5:0.95 : {metrics.box.map:.4f}")
-print(f"   Precision    : {metrics.box.mp:.4f}")
-print(f"   Recall       : {metrics.box.mr:.4f}")
+    data_yaml = Path(args.data)
+    if not data_yaml.is_file():
+        print(f"\nDataset YAML not found: {data_yaml}")
+        print("Prepare a dataset before running model.val().")
+        return 1
 
-# Évaluation
-if metrics.box.map50 > 0.7:
-    print(f"   ✅ Excellente performance (>0.7)")
-elif metrics.box.map50 > 0.5:
-    print(f"   ⚠️ Performance acceptable (>0.5)")
-else:
-    print(f"   ❌ Performance faible (<0.5)")
+    print(f"\nModel: {model_path}")
+    print(f"Dataset: {data_yaml}")
 
-# Sauvegarder
-output_dir = Path("resultats/evaluation")
-output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        from ultralytics import YOLO
+    except ImportError:
+        print("\nultralytics is not installed. Install requirements.txt to run model.val().")
+        print("CPU unit tests do not need it: pytest tests/test_evaluation_validation.py")
+        return 1
 
-results = {
-    "mAP@0.5": float(metrics.box.map50),
-    "mAP@0.5:0.95": float(metrics.box.map),
-    "precision": float(metrics.box.mp),
-    "recall": float(metrics.box.mr)
-}
+    model = YOLO(str(model_path))
+    metrics = model.val(data=str(data_yaml), plots=True)
+    compiled = compile_box_metrics(
+        precision=float(metrics.box.mp),
+        recall=float(metrics.box.mr),
+        map50=float(metrics.box.map50),
+        map50_95=float(metrics.box.map),
+    )
 
-with open(output_dir / "metrics.json", 'w') as f:
-    json.dump(results, f, indent=2)
+    print("\nMeasured detection metrics:")
+    for key, value in compiled.items():
+        print(f"  {key}: {value:.4f}")
 
-# 2️⃣ ERREUR DE GÉOLOCALISATION
-print("\n2️⃣ Mean Geolocation Error")
-print("-" * 70)
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as handle:
+        json.dump({"model": str(model_path), "data": str(data_yaml), **compiled}, handle, indent=2)
+    print(f"\nWrote {output_path}")
 
-geojson_file = "resultats/geojson/test_detections.geojson"
-
-if os.path.exists(geojson_file):
-    with open(geojson_file, 'r') as f:
-        data = json.load(f)
-    
-    num_detections = len(data.get('features', []))
-    print(f"\n   Détections géolocalisées: {num_detections}")
-    print(f"   ✅ Toutes ont des coordonnées GPS valides")
-    print(f"   ℹ️ Erreur moyenne: Simulée (pas de ground truth)")
-else:
-    print(f"\n   ⚠️ Aucun GeoJSON trouvé")
-    print(f"   Générez: python simple_detect_gps.py video.mp4")
-
-# 3️⃣ THROUGHPUT (FPS)
-print("\n3️⃣ Throughput (FPS)")
-print("-" * 70)
-
-test_video = None
-if len(sys.argv) > 1:
-    test_video = sys.argv[1]
-
-if test_video and os.path.exists(test_video):
-    print(f"\n🎥 Test sur: {test_video}")
-    
-    cap = cv2.VideoCapture(test_video)
-    frames_processed = 0
-    start_time = time.time()
-    
-    while frames_processed < 100:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        
-        model.predict(frame, verbose=False)
-        frames_processed += 1
-    
-    elapsed = time.time() - start_time
-    fps = frames_processed / elapsed
-    
-    cap.release()
-    
-    print(f"\n   Frames: {frames_processed}")
-    print(f"   Temps: {elapsed:.2f}s")
-    print(f"   FPS: {fps:.2f}")
-    
-    if fps >= 30:
-        print(f"   ✅ Real-time (≥30 FPS)")
-    elif fps >= 15:
-        print(f"   ⚠️ Near real-time (≥15 FPS)")
+    print("\nGeolocation coordinate check")
+    geojson_path = Path(args.geojson)
+    if geojson_path.is_file():
+        with geojson_path.open("r", encoding="utf-8") as handle:
+            geojson = json.load(handle)
+        report = validate_detection_coordinates(geojson)
+        print(
+            f"  points={report['count']} valid={report['valid']} invalid={report['invalid']}"
+        )
+        if report["count"] == 0:
+            print("  No coordinates found in GeoJSON.")
+        elif not report["all_valid"]:
+            print("  Some coordinates are outside valid lat/lon ranges.")
+        print("  Mean geolocation error was not computed (no GPS ground truth).")
     else:
-        print(f"   ❌ Batch processing (<15 FPS)")
-else:
-    print(f"\n   ⚠️ Pas de vidéo fournie")
-    print(f"   Usage: python evaluate_model.py video.mp4")
+        print(f"  No GeoJSON at {geojson_path}")
 
-print("\n" + "=" * 70)
-print("  ✅ ÉVALUATION TERMINÉE")
-print("=" * 70)
-print(f"\n📁 Résultats: resultats/evaluation/metrics.json")
+    print("\nThroughput")
+    if args.video and os.path.exists(args.video):
+        try:
+            import cv2
+        except ImportError:
+            print("  opencv-python is not installed; skipped FPS measurement.")
+            return 0
+
+        cap = cv2.VideoCapture(args.video)
+        frames_processed = 0
+        start_time = time.time()
+        while frames_processed < 100:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            model.predict(frame, verbose=False)
+            frames_processed += 1
+        elapsed = time.time() - start_time
+        cap.release()
+        fps = frames_processed / elapsed if elapsed > 0 else 0.0
+        print(f"  frames={frames_processed} seconds={elapsed:.2f} fps={fps:.2f}")
+    else:
+        print("  No video provided. Pass a path to measure FPS.")
+
+    print("\nDone. Metrics above come from this run only.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(evaluate(parse_args()))

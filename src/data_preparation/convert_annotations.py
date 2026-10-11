@@ -11,6 +11,8 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 from tqdm import tqdm
 
+from src.evaluation.validation import LabelValidationError, xyxy_to_yolo_bbox
+
 
 # Class mapping
 CLASSES = {
@@ -71,14 +73,15 @@ class AnnotationConverter:
                 # COCO bbox: [x, y, width, height]
                 x, y, w, h = ann['bbox']
                 category_id = ann['category_id']
-                
-                # Convert to YOLO format: [class, x_center, y_center, width, height] (normalized)
-                x_center = (x + w / 2) / img_width
-                y_center = (y + h / 2) / img_height
-                w_norm = w / img_width
-                h_norm = h / img_height
-                
-                yolo_annotations.append(f"{category_id} {x_center:.6f} {y_center:.6f} {w_norm:.6f} {h_norm:.6f}")
+                try:
+                    x_center, y_center, w_norm, h_norm = xyxy_to_yolo_bbox(
+                        x, y, x + w, y + h, img_width, img_height
+                    )
+                except LabelValidationError:
+                    continue
+                yolo_annotations.append(
+                    f"{category_id} {x_center:.6f} {y_center:.6f} {w_norm:.6f} {h_norm:.6f}"
+                )
             
             # Write YOLO annotation file
             output_file = self.output_dir / f"{filename}.txt"
@@ -120,14 +123,16 @@ class AnnotationConverter:
                 ymin = float(bbox.find('ymin').text)
                 xmax = float(bbox.find('xmax').text)
                 ymax = float(bbox.find('ymax').text)
-                
-                # Convert to YOLO format
-                x_center = ((xmin + xmax) / 2) / img_width
-                y_center = ((ymin + ymax) / 2) / img_height
-                width = (xmax - xmin) / img_width
-                height = (ymax - ymin) / img_height
-                
-                yolo_annotations.append(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
+
+                try:
+                    x_center, y_center, width, height = xyxy_to_yolo_bbox(
+                        xmin, ymin, xmax, ymax, img_width, img_height
+                    )
+                except LabelValidationError:
+                    continue
+                yolo_annotations.append(
+                    f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}"
+                )
             
             # Write YOLO annotation file
             output_file = self.output_dir / f"{xml_file.stem}.txt"
@@ -169,14 +174,16 @@ class AnnotationConverter:
                 ymin = row['ymin']
                 xmax = row['xmax']
                 ymax = row['ymax']
-                
-                # Convert to YOLO format
-                x_center = ((xmin + xmax) / 2) / img_width
-                y_center = ((ymin + ymax) / 2) / img_height
-                width = (xmax - xmin) / img_width
-                height = (ymax - ymin) / img_height
-                
-                yolo_annotations.append(f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}")
+
+                try:
+                    x_center, y_center, width, height = xyxy_to_yolo_bbox(
+                        xmin, ymin, xmax, ymax, img_width, img_height
+                    )
+                except LabelValidationError:
+                    continue
+                yolo_annotations.append(
+                    f"{class_id} {x_center:.6f} {y_center:.6f} {width:.6f} {height:.6f}"
+                )
             
             # Write YOLO annotation file
             output_file = self.output_dir / f"{Path(filename).stem}.txt"
